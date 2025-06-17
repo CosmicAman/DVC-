@@ -1,4 +1,4 @@
-import { RouterProvider } from './context/RouterContext';
+import RouterProvider from './context/RouterContext';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
@@ -62,11 +62,11 @@ function AppContent() {
 
 function App() {
   return (
-    <RouterProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <RouterProvider>
         <AppContent />
-      </AuthProvider>
-    </RouterProvider>
+      </RouterProvider>
+    </AuthProvider>
   );
 }
 

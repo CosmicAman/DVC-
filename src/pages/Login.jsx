@@ -1,223 +1,209 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import '../styles/Login.css';
 
-export default function Login() {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSignup, setIsSignup] = useState(false);
+const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [adminCode, setAdminCode] = useState('');
+  const [loginType, setLoginType] = useState('public'); // 'public' or 'admin'
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login, signup, googleLogin, googleSignup } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
+  const [name, setName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const { login, googleLogin, signup } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
-      if (isSignup) {
-        await signup(email, password, name);
-      } else if (isAdmin) {
-        await login(email, password, adminCode);
+      if (isLogin) {
+        if (loginType === 'admin') {
+          // Admin login
+          if (email === 'admin@dvc.com' && password === '1234') {
+            await login(email, password);
+          } else {
+            setError('Invalid admin credentials');
+          }
+        } else {
+          // Public user login
+          if (email === 'user@dvc.com' && password === '1234') {
+            await login(email, password);
+          } else {
+            setError('Invalid credentials');
+          }
+        }
       } else {
-        await login(email, password);
+        if (password !== confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
+        await signup(email, password, name);
       }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      switch (error.code) {
-        case 'auth/invalid-email':
-          setError('Invalid email address');
-          break;
-        case 'auth/user-disabled':
-          setError('This account has been disabled');
-          break;
-        case 'auth/user-not-found':
-          setError('No account found with this email');
-          break;
-        case 'auth/wrong-password':
-          setError('Incorrect password');
-          break;
-        case 'auth/email-already-in-use':
-          setError('An account with this email already exists');
-          break;
-        case 'auth/weak-password':
-          setError('Password should be at least 6 characters');
-          break;
-        default:
-          setError('Failed to authenticate. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
-  const handleGoogleAuth = async () => {
-    setError('');
-    setLoading(true);
-
+  const handleGoogleLogin = async () => {
     try {
-      if (isSignup) {
-        await googleSignup();
-      } else {
-        await googleLogin();
-      }
-    } catch (error) {
-      console.error('Google authentication error:', error);
-      switch (error.code) {
-        case 'auth/popup-closed-by-user':
-          setError('Google sign-in was cancelled');
-          break;
-        case 'auth/popup-blocked':
-          setError('Google sign-in popup was blocked. Please allow popups for this site');
-          break;
-        case 'auth/cancelled-popup-request':
-          setError('Google sign-in was cancelled');
-          break;
-        default:
-          setError('Failed to authenticate with Google. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+      await googleLogin();
+    } catch (err) {
+      setError(err.message);
     }
+  };
+
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setEmail('');
+    setPassword('');
+    setName('');
+    setConfirmPassword('');
   };
 
   return (
-    <div className="form-container">
-      <h2 className="card-title text-center">
-        {isAdmin ? 'Admin Login' : isSignup ? 'Sign Up' : 'Login'}
-      </h2>
-
-      {error && (
-        <div className="error-message" style={{ 
-          color: '#e53e3e', 
-          backgroundColor: '#fff5f5', 
-          padding: '0.75rem', 
-          borderRadius: '4px', 
-          marginBottom: '1rem' 
-        }}>
-          {error}
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-header">
+          <img src="dvclogo.jpeg" alt="DVC Logo" className="login-logo" />
+          <h1>Welcome to DVC</h1>
+          <p className="login-subtitle">{isLogin ? 'Sign in to access your account' : 'Create a new account'}</p>
         </div>
-      )}
 
-      <form onSubmit={handleSubmit}>
-        {isSignup && (
-          <div className="form-group">
-            <label className="form-label">Full Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="form-input"
-              required
-              disabled={loading}
-              placeholder="Enter your full name"
-            />
+        {isLogin && (
+          <div className="login-type-selector">
+            <button
+              className={`login-type-btn ${loginType === 'public' ? 'active' : ''}`}
+              onClick={() => setLoginType('public')}
+            >
+              <i className="fas fa-user"></i>
+              Public Login
+            </button>
+            <button
+              className={`login-type-btn ${loginType === 'admin' ? 'active' : ''}`}
+              onClick={() => setLoginType('admin')}
+            >
+              <i className="fas fa-shield-alt"></i>
+              Admin Login
+            </button>
           </div>
         )}
 
-        <div className="form-group">
-          <label className="form-label">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="form-input"
-            required
-            disabled={loading}
-            placeholder="Enter your email"
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="form-input"
-            required
-            disabled={loading}
-            placeholder="Enter your password"
-            minLength={6}
-          />
-        </div>
-
-        {isAdmin && (
+        <form onSubmit={handleSubmit} className="login-form">
+          {!isLogin && (
+            <div className="form-group">
+              <label htmlFor="name">
+                <i className="fas fa-user"></i>
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
+          )}
           <div className="form-group">
-            <label className="form-label">Admin Code</label>
+            <label htmlFor="email">
+              <i className="fas fa-envelope"></i>
+              Email
+            </label>
             <input
-              type="text"
-              value={adminCode}
-              onChange={(e) => setAdminCode(e.target.value)}
-              className="form-input"
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={isLogin ? (loginType === 'admin' ? 'admin@dvc.com' : 'user@dvc.com') : 'Enter your email'}
               required
-              disabled={loading}
-              placeholder="Enter admin code"
             />
           </div>
-        )}
-
-        <button 
-          type="submit" 
-          className="auth-button auth-button-primary" 
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <span className="loading-spinner"></span>
-              Processing...
-            </>
-          ) : isSignup ? 'Sign Up' : 'Login'}
-        </button>
-      </form>
-
-      {!isAdmin && (
-        <div className="mt-4">
-          <button
-            onClick={handleGoogleAuth}
-            className="auth-button auth-button-secondary"
-            disabled={loading}
-          >
-            <img 
-              src="https://www.google.com/favicon.ico" 
-              alt="Google" 
-              style={{ width: '18px', height: '18px' }} 
+          <div className="form-group">
+            <label htmlFor="password">
+              <i className="fas fa-lock"></i>
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
             />
-            {loading ? (
-              <>
-                <span className="loading-spinner"></span>
-                Processing...
-              </>
-            ) : isSignup ? 'Sign up with Google' : 'Login with Google'}
+          </div>
+          {!isLogin && (
+            <div className="form-group">
+              <label htmlFor="confirmPassword">
+                <i className="fas fa-lock"></i>
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your password"
+                required
+              />
+            </div>
+          )}
+          {error && (
+            <div className="error-message">
+              <i className="fas fa-exclamation-circle"></i>
+              {error}
+            </div>
+          )}
+          <button type="submit" className="login-button">
+            <i className={`fas ${isLogin ? 'fa-sign-in-alt' : 'fa-user-plus'}`}></i>
+            {isLogin ? (loginType === 'admin' ? 'Login as Admin' : 'Login as Public User') : 'Create Account'}
           </button>
-        </div>
-      )}
+        </form>
 
-      <div className="text-center mt-4">
-        <div className="auth-links">
-          {!isAdmin && (
-            <button
-              onClick={() => setIsSignup(!isSignup)}
-              className="auth-button auth-button-secondary"
-              disabled={loading}
-            >
-              {isSignup ? 'Already have an account? Login' : 'Need an account? Sign Up'}
-            </button>
-          )}
-          {!isSignup && (
-            <button
-              onClick={() => setIsAdmin(!isAdmin)}
-              className="auth-button auth-button-secondary"
-              disabled={loading}
-            >
-              {isAdmin ? 'Switch to Public Login' : 'Switch to Admin Login'}
-            </button>
-          )}
+        <div className="login-divider">
+          <span>OR</span>
         </div>
+
+        <button onClick={handleGoogleLogin} className="google-login-button">
+          <img 
+            src="https://www.google.com/favicon.ico" 
+            alt="Google" 
+            className="google-icon"
+          />
+          Continue with Google
+        </button>
+
+        <div className="auth-toggle">
+          <p>
+            {isLogin ? "Don't have an account?" : "Already have an account?"}
+            <button onClick={toggleAuthMode} className="toggle-button">
+              {isLogin ? 'Sign Up' : 'Sign In'}
+            </button>
+          </p>
+        </div>
+
+        {isLogin && loginType === 'admin' && (
+          <div className="admin-info">
+            <i className="fas fa-info-circle"></i>
+            <p>Admin Credentials:</p>
+            <p>Email: admin@dvc.com</p>
+            <p>Password: 1234</p>
+          </div>
+        )}
+        {isLogin && loginType === 'public' && (
+          <div className="public-info">
+            <i className="fas fa-info-circle"></i>
+            <p>Public User Credentials:</p>
+            <p>Email: user@dvc.com</p>
+            <p>Password: 1234</p>
+          </div>
+        )}
       </div>
     </div>
   );
-} 
+};
+
+export default Login; 

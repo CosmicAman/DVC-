@@ -7,6 +7,7 @@ import '../styles/Dashboard.css';
 import QuarterDetailsModal from '../components/QuarterDetailsModal';
 import AllQuartersModal from '../components/AllQuartersModal';
 import ImageSlider from '../components/ImageSlider';
+import Navbar from '../components/layout/Navbar';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -100,15 +101,26 @@ export default function Dashboard() {
   };
 
   if (loading) {
-    return <div className="loading-container">Loading dashboard data...</div>;
+    return (
+      <div className="dashboard">
+        <Navbar />
+        <div className="loading-container">Loading dashboard data...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="error-message">{error}</div>;
+    return (
+      <div className="dashboard">
+        <Navbar />
+        <div className="error-message">{error}</div>
+      </div>
+    );
   }
 
   return (
     <div className="dashboard">
+      <Navbar />
       <ImageSlider />
       <div className="dashboard-container">
         <div className="dashboard-header">
